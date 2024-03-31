@@ -104,11 +104,14 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, layer_no, d_model, vocab_size, h, d_k, d_v, d_ff):
         super(Decoder).__init__()
+        self.d_model = d_model
+        self.vocab_size = vocab_size
+        self.h = h
+        self.d_k = d_k
+        self.d_v = d_v
+        self.d_ff = d_ff
+
         self.layer_no = layer_no
-        self.pos_enc = PositionalEncoding(d_model, vocab_size)
-        self.multiheadattention = MultiHeadAttention(d_model, h, d_k, d_v)
-        self.feedforward = FeedForward(d_model, d_ff)
-        self.encoder = Encoder(layer_no, d_model, vocab_size, h, d_k, d_v, d_ff)
         self.norm = nn.LayerNorm(d_model)
         self.linear = nn.Linear(d_model, vocab_size)
         self.softmax = nn.Softmax()
@@ -127,6 +130,14 @@ class Decoder(nn.Module):
         return out
 
     def forward(self, embeds):
+        self.pos_enc = PositionalEncoding(self.d_model, self.vocab_size)
+
+        self.multiheadattention = MultiHeadAttention(self.d_model, self.h, self.d_k, self.d_v)
+
+        self.feedforward = FeedForward(self.d_model, self.d_ff)
+
+        self.encoder = Encoder(self.layer_no, self.d_model, self.vocab_size, self.h, self.d_k, self.d_v, self.d_ff)
+
         output = embeds
         for i in range(self.layer_no):
             output = Decoder.block(self.multiheadattention,
@@ -150,7 +161,7 @@ class Transformer(nn.Module):
         self.h = h
         self.d_k = d_k
         self.d_v = d_v
-        self.d_f = d_ff
+        self.d_ff = d_ff
 
     def forward(self, embeds):
         self.encoder = Encoder(self.layer_no, self.d_model, self.vocab_size, self.h, self.d_k, self.d_v, self.d_ff)
